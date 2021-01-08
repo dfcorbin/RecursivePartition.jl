@@ -6,7 +6,8 @@ include("legendre.jl")
 export MVPIndex, index_pcbmat, trunc_pcbmat, mvpindex
 include("pcb.jl")
 
-export splitmat, insert_knot!, insert_knot, which_subset, partition
+export splitmat, insert_knot!, insert_knot, which_subset, partition,
+    is_contained
 include("partition.jl")
 
 end

@@ -21,6 +21,7 @@ makedocs(;
             "Polynomial Chaos Basis" => "pcb.md"
         ],
         "Recursive Partitioning" => "partition.md"
+        "Regression" => "regression.md"
     ],
 )
 

@@ -14,3 +14,9 @@ makedocs(;
         "Home" => "index.md",
     ],
 )
+
+
+deploydocs(;
+    repo="github.com/dfcorbin/RecursivePartition.jl.git",
+    devbranch="main"
+)

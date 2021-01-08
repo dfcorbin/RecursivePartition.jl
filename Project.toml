@@ -1,0 +1,13 @@
+name = "RecursivePartition"
+uuid = "d57b171a-2237-49d2-a8f0-cd22f4c2e2bf"
+authors = ["Douglas Corbin <dfcorbin98@gmail.com>"]
+version = "0.1.0"
+
+[compat]
+julia = "1.4.2"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]

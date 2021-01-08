@@ -14,7 +14,7 @@ function test_BLM()
     foo(x) = coeff[1] + coeff[2] * x[1] + coeff[3] * x[2]
     Random.seed!()
     X, y = gendat(500000, 0.5, foo, 2)
-    mod = BayesLinearModel(X, y, 2)
+    mod = BayesLinearModel(X, y)
     @test get_dim(mod) == 2
     @test get_scaleprior(mod) == 0.001
     @test get_shapeprior(mod) == 0.001
@@ -37,19 +37,21 @@ end
 
 
 function test_SBLM()
-    # testfun(x) = x[1] * x[2]^2 - 2 * x[1]^3
-    # X, y = gendat(500000, 0.5, testfun, 2; bounds=[0.0, 1.0])
-    # maxparam = 100
-    # m = SparsePoly(X, y, 5, [0.0, 1.0]; maxparam=maxparam)
-    # coeff, cov = get_coeffpost(m), get_covpost(m)
-    # @test length(coeff) == size(cov, 1) == length(get_indices(m)) + 1
-    # @test length(coeff) <= maxparam
-    # xtest = rand(2)
-    # pred1 = predict(m, reshape(xtest, (1, :)))[1]
-    # pred2 = predfun(m)(xtest)
-    # truemean = testfun(xtest)
-    # @test pred1 ≈ pred2
-    # @test approxeq(pred1, truemean, 0.01)
+    testfun(x) = x[1] * x[2]^2 - 2 * x[1]^3
+    Random.seed!(100)
+    X, y = gendat(500000, 0.5, testfun, 2; bounds=[0.0, 1.0])
+    maxparam = 100
+    Random.seed!(100)
+    m = PolyBLM(X, y, 5, [0.0, 1.0]; maxparam=maxparam)
+    coeff, cov = get_coeffpost(m), get_covpost(m)
+    @test length(coeff) == size(cov, 1) == length(get_indices(m)) + 1
+    @test length(coeff) <= maxparam
+    xtest = rand(2)
+    pred1 = predict(m, reshape(xtest, (1, :)))[1]
+    pred2 = predfun(m)(xtest)
+    truemean = testfun(xtest)
+    @test pred1 ≈ pred2
+    @test approxeq(pred1, truemean, 0.01)
 end
 
 

@@ -128,9 +128,9 @@ function fit!(mod::BayesLinearModel, X::Matrix{Float64}, y::Vector{Float64})
 end
 
 
-function BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64}, dim::Int64;
+function BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64};
         shape::Float64=0.001, scale::Float64=0.001,
-        prior::BLMHyper=BLMHyper(dim, shape, scale))
+        prior::BLMHyper=BLMHyper(size(X, 2), shape, scale))
     mod = BayesLinearModel(prior, deepcopy(prior))
     fit!(mod, X, y)
     return mod
@@ -199,152 +199,151 @@ function logevidence(mod::BayesLinearModel)
 end
 
 
-# """
-#     SparsePoly(X, y, degmax, bounds; maxparam=200, shape=0.001, scale0.001,
-#         priorgen=identity_hyper)
-#
-# Construct a linear model using features derrived from the [Polynomial Chaos
-# Basis](@ref).
-#
-# A bound on the maximum number of model parameters, `maxparam`, is specified by
-# the user. If the number of parameters exceeds this bound, the LARS algorithm is
-# used to choose the "best" set of parameters satisfying the bound. Consequently, a
-# [`SparsePoly`](@ref) cannot be constructed without data (unlike
-# [`BayesLinearModel`](@ref)).
-#
-# Since we do not know which/how many parameters will be included in the model
-# (we only that the number of parameters is bounded by `maxparam`), it is not
-# possible to supply an object of type [`BLMHyper`](@ref) as a prior distribution.
-# Instead, the argument `priorgen` accepts a function which specifies how the
-# prior distribution should be generated. `priorgen` **must** have the signature
-#
-#     priorgen(indices::Vector{MVPIndex}, shape::Float64, scale::Float64)
-#
-# and return an object of type [`BLMHyper`](@ref)
-#
-# See also: [`BayesLinearModel`](@ref), [`BLMHyper`](@ref), [`MVPIndex`](@ref)
-# """
-# mutable struct SparsePoly <: LinearModel
-#     blm::BayesLinearModel
-#     indices::Vector{MVPIndex}
-#     kmat::Matrix{Float64}
-# end
-#
-#
-# # Accessors for SparsePoly abstract type.
-# get_dim(mod::SparsePoly) = get_dim(mod.blm)
-# get_scaleprior(mod::SparsePoly) = get_scaleprior(mod.blm)
-# get_shapeprior(mod::SparsePoly) = get_shapeprior(mod.blm)
-# get_covprior(mod::SparsePoly) = get_covprior(mod.blm)
-# get_covinvprior(mod::SparsePoly) = get_covinvprior(mod.blm)
-# get_coeffprior(mod::SparsePoly) = get_coeffprior(mod.blm)
-# get_scalepost(mod::SparsePoly) = get_scalepost(mod.blm)
-# get_shapepost(mod::SparsePoly) = get_shapepost(mod.blm)
-# get_covpost(mod::SparsePoly) = get_covpost(mod.blm)
-# get_covinvpost(mod::SparsePoly) = get_covinvpost(mod.blm)
-# get_coeffpost(mod::SparsePoly) = get_coeffpost(mod.blm)
-# get_N(mod::SparsePoly) = Int64(2 * (get_shapepost(mod) - get_shapeprior(mod)))
-# get_kmat(mod::SparsePoly) = mod.kmat
-# get_indices(mod::SparsePoly) = mod.indices
-# get_blm(mod::SparsePoly) = mod.blm
-#
-# # Setters for SparsePoly
-# set_scaleprior!(mod::SparsePoly, val) = set_scaleprior!(mod.blm, val)
-# set_shapeprior!(mod::SparsePoly, val) = set_shapeprior!(mod.blm, val)
-# set_covprior!(mod::SparsePoly, val) = set_covprior!(mod.blm, val)
-# set_covinvprior!(mod::SparsePoly, val) = set_covinvprior!(mod.blm, val)
-# set_coeffprior!(mod::SparsePoly, val) = set_coeffprior!(mod.blm, val)
-# set_scalepost!(mod::SparsePoly, val) = set_scalepost!(mod.blm, val)
-# set_shapepost!(mod::SparsePoly, val) = set_shapepost!(mod.blm, val)
-# set_covpost!(mod::SparsePoly, val) = set_covpost!(mod.blm, val)
-# set_covinvpost!(mod::SparsePoly, val) = set_covinvpost!(mod.blm, val)
-# set_coeffpost!(mod::SparsePoly, val) = set_coeffpost!(mod.blm, val)
-#
-#
-# function boundedvar(X::Matrix{Float64}, y::Vector{Float64},
-#     indices::Vector{MVPIndex}, kmat::Matrix{Float64}, maxparam::Int64)
-#     modmat = index_pcbmat(X, indices, kmat)
-#     if length(indices) <= maxparam return modmat, indices end
-#     lasso = GLMNet.glmnet(modmat, y).betas
-#     var = Vector{Bool}(undef, length(indices))
-#     for j in 1:size(lasso, 2)
-#         if LinearAlgebra.norm(lasso[:, j], 0) > maxparam
-#             var = (lasso[:, j - 1] .!= 0)
-#             break
-#         end
-#     end
-#     return modmat[:, var], indices[var]
-# end
-#
-#
-# function varselect(X::Matrix{Float64}, y::Vector{Float64},
-#     indices::Vector{MVPIndex}, kmat::Matrix{Float64}, maxparam::Int64)
-#     if maxparam == 0
-#         modmat = index_pcbmat(X, indices, kmat)
-#         return (modmat, indices)
-#     elseif maxparam > 0
-#         return boundedvar(X, y, indices, kmat, maxparam)
-#     else
-#         throw(ArgumentError("maxparam must be non-negative."))
-#     end
-# end
-#
-#
-# function identity_hyper(indices::Vector{MVPIndex}, shape::Float64,
-#     scale::Float64)
-#     dim = length(indices)
-#     coeff = zeros(Float64, dim + 1)
-#     cov = LinearAlgebra.diagm(ones(Float64, dim + 1))
-#     return BLMHyper(coeff, cov, cov, shape, scale)
-# end
-#
-#
-# function SparsePoly(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
-#     bounds::Matrix{Float64}; maxparam::Int64=200, shape::Float64=0.001,
-#     scale::Float64=0.001, priorgen::Function=identity_hyper)
-#     dim = size(X, 2)
-#     indices = mvpindex(dim, degmax)
-#     modmat, indices = varselect(X, y, indices, bounds, maxparam)
-#     prior = priorgen(indices, shape, scale)
-#     blm = BayesLinearModel(length(indices), prior)
-#     fit!(blm, modmat, y)
-#     return SparsePoly(blm, indices, bounds)
-# end
-#
-#
-# function SparsePoly(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
-#     bounds::Vector{Float64}; maxparam::Int64=200)
-#     kmat = repeat([bounds[1] bounds[2]], size(X, 2), 1)
-#     return SparsePoly(X, y, degmax, kmat; maxparam=maxparam)
-# end
-#
-#
-# function mod_pcbmat(mod::SparsePoly, X::Matrix{Float64})
-#     return index_pcbmat(X, get_indices(mod), get_kmat(mod))
-# end
-#
-#
-# function fit!(mod::SparsePoly, X::Matrix{Float64}, y::Vector{Float64})
-#     modmat = mod_pcbmat(mod, X)
-#     fit!(get_blm(mod), modmat, y)
-# end
-#
-#
-# function predict(mod::SparsePoly, X::Matrix{Float64})
-#     modmat = mod_pcbmat(mod, X)
-#     predict(get_blm(mod), modmat)
-# end
-#
-#
-# function predfun(mod::SparsePoly)
-#     p = predfun(get_blm(mod))
-#     function f(x::Vector{Float64})::Float64
-#         x1 = reshape(x, (1, :))
-#         ϕ = [1.0, mod_pcbmat(mod, x1)...]
-#         return ϕ' * get_coeffpost(mod)
-#     end
-#     return f
-# end
-#
-#
-# logevidence(mod::SparsePoly) = logevidence(get_blm(mod))
+"""
+    PolyBLM(X, y, degmax, bounds; maxparam=200, shape=0.001, scale0.001,
+        priorgen=identity_hyper)
+
+Construct a linear model using features derrived from the [Polynomial Chaos
+Basis](@ref).
+
+A bound on the maximum number of model parameters, `maxparam`, is specified by
+the user. If the number of parameters exceeds this bound, the LARS algorithm is
+used to choose the "best" set of parameters satisfying the bound. Consequently, a
+[`PolyBLM`](@ref) cannot be constructed without data (unlike
+[`BayesLinearModel`](@ref)).
+
+Since we do not know which/how many parameters will be included in the model
+(we only that the number of parameters is bounded by `maxparam`), it is not
+possible to supply an object of type [`BLMHyper`](@ref) as a prior distribution.
+Instead, the argument `priorgen` accepts a function which specifies how the
+prior distribution should be generated. `priorgen` **must** have the signature
+
+    priorgen(indices::Vector{MVPIndex}, shape::Float64, scale::Float64)
+
+and return an object of type [`BLMHyper`](@ref)
+
+See also: [`BayesLinearModel`](@ref), [`BLMHyper`](@ref), [`MVPIndex`](@ref)
+"""
+mutable struct PolyBLM <: LinearModel
+    blm::BayesLinearModel
+    indices::Vector{MVPIndex}
+    kmat::Matrix{Float64}
+end
+
+
+# Accessors for PolyBLM abstract type.
+get_dim(mod::PolyBLM) = get_dim(mod.blm)
+get_scaleprior(mod::PolyBLM) = get_scaleprior(mod.blm)
+get_shapeprior(mod::PolyBLM) = get_shapeprior(mod.blm)
+get_covprior(mod::PolyBLM) = get_covprior(mod.blm)
+get_covinvprior(mod::PolyBLM) = get_covinvprior(mod.blm)
+get_coeffprior(mod::PolyBLM) = get_coeffprior(mod.blm)
+get_scalepost(mod::PolyBLM) = get_scalepost(mod.blm)
+get_shapepost(mod::PolyBLM) = get_shapepost(mod.blm)
+get_covpost(mod::PolyBLM) = get_covpost(mod.blm)
+get_covinvpost(mod::PolyBLM) = get_covinvpost(mod.blm)
+get_coeffpost(mod::PolyBLM) = get_coeffpost(mod.blm)
+get_N(mod::PolyBLM) = Int64(2 * (get_shapepost(mod) - get_shapeprior(mod)))
+get_kmat(mod::PolyBLM) = mod.kmat
+get_indices(mod::PolyBLM) = mod.indices
+get_blm(mod::PolyBLM) = mod.blm
+
+# Setters for PolyBLM
+set_scaleprior!(mod::PolyBLM, val) = set_scaleprior!(mod.blm, val)
+set_shapeprior!(mod::PolyBLM, val) = set_shapeprior!(mod.blm, val)
+set_covprior!(mod::PolyBLM, val) = set_covprior!(mod.blm, val)
+set_covinvprior!(mod::PolyBLM, val) = set_covinvprior!(mod.blm, val)
+set_coeffprior!(mod::PolyBLM, val) = set_coeffprior!(mod.blm, val)
+set_scalepost!(mod::PolyBLM, val) = set_scalepost!(mod.blm, val)
+set_shapepost!(mod::PolyBLM, val) = set_shapepost!(mod.blm, val)
+set_covpost!(mod::PolyBLM, val) = set_covpost!(mod.blm, val)
+set_covinvpost!(mod::PolyBLM, val) = set_covinvpost!(mod.blm, val)
+set_coeffpost!(mod::PolyBLM, val) = set_coeffpost!(mod.blm, val)
+
+
+function boundedvar(X::Matrix{Float64}, y::Vector{Float64},
+    indices::Vector{MVPIndex}, kmat::Matrix{Float64}, maxparam::Int64)
+    modmat = index_pcbmat(X, indices, kmat)
+    if length(indices) <= maxparam return modmat, indices end
+    lasso = glmnet(modmat, y).betas
+    var = Vector{Bool}(undef, length(indices))
+    for j in 1:size(lasso, 2)
+        if norm(lasso[:, j], 0) > maxparam
+            var = (lasso[:, j - 1] .!= 0)
+            break
+        end
+    end
+    return modmat[:, var], indices[var]
+end
+
+
+function varselect(X::Matrix{Float64}, y::Vector{Float64},
+    indices::Vector{MVPIndex}, kmat::Matrix{Float64}, maxparam::Int64)
+    if maxparam == 0
+        modmat = index_pcbmat(X, indices, kmat)
+        return (modmat, indices)
+    elseif maxparam > 0
+        return boundedvar(X, y, indices, kmat, maxparam)
+    else
+        throw(ArgumentError("maxparam must be non-negative."))
+    end
+end
+
+
+function identity_hyper(indices::Vector{MVPIndex}, shape::Float64,
+    scale::Float64)
+    dim = length(indices)
+    coeff = zeros(Float64, dim + 1)
+    cov = diagm(ones(Float64, dim + 1))
+    return BLMHyper(coeff, cov, cov, shape, scale)
+end
+
+
+function PolyBLM(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
+    bounds::Matrix{Float64}; maxparam::Int64=200, shape::Float64=0.001,
+    scale::Float64=0.001, priorgen::Function=identity_hyper)
+    dim = size(X, 2)
+    indices = mvpindex(dim, degmax)
+    modmat, indices = varselect(X, y, indices, bounds, maxparam)
+    prior = priorgen(indices, shape, scale)
+    blm = BayesLinearModel(modmat, y; prior=prior)
+    return PolyBLM(blm, indices, bounds)
+end
+
+
+function PolyBLM(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
+    bounds::Vector{Float64}; maxparam::Int64=200)
+    kmat = repeat([bounds[1] bounds[2]], size(X, 2), 1)
+    return PolyBLM(X, y, degmax, kmat; maxparam=maxparam)
+end
+
+
+function mod_pcbmat(mod::PolyBLM, X::Matrix{Float64})
+    return index_pcbmat(X, get_indices(mod), get_kmat(mod))
+end
+
+
+function fit!(mod::PolyBLM, X::Matrix{Float64}, y::Vector{Float64})
+    modmat = mod_pcbmat(mod, X)
+    fit!(get_blm(mod), modmat, y)
+end
+
+
+function predict(mod::PolyBLM, X::Matrix{Float64})
+    modmat = mod_pcbmat(mod, X)
+    predict(get_blm(mod), modmat)
+end
+
+
+function predfun(mod::PolyBLM)
+    p = predfun(get_blm(mod))
+    function f(x::Vector{Float64})::Float64
+        x1 = reshape(x, (1, :))
+        ϕ = [1.0, mod_pcbmat(mod, x1)...]
+        return ϕ' * get_coeffpost(mod)
+    end
+    return f
+end
+
+
+logevidence(mod::PolyBLM) = logevidence(get_blm(mod))

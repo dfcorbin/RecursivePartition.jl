@@ -30,3 +30,7 @@ end
 @testset "Regression" begin
     include("test_regression.jl")
 end
+
+@testset "partition-regression" begin
+    include("test_partition_regression.jl")
+end

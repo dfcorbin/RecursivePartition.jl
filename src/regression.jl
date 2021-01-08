@@ -40,7 +40,7 @@ end
 """
 Abstract type encompassing different linear models.
 
-See also: [`BayesLinearModel`](@ref), [`SparsePoly`](@ref)
+See also: [`BayesLinearModel`](@ref), [`PolyBLM`](@ref)
 """
 abstract type LinearModel end
 

@@ -337,27 +337,27 @@ end
 
 
 function best_dim_split(mod::PartitionModel{T}, stored::Vector{SubsetMem{T}},
-    k::Int64, mindat::Int64, args::ModArgs) where T <: LinearModel
+    k::Int64, mindat::Int64, args::ModArgs, verbose) where T <: LinearModel
     dim = size(get_loc_X(mod, k), 2)
     kmat = get_P(mod)[k]
     proposed = Vector{PartitionModel{T}}(undef, dim)
     ev_vals = Vector{Float64}(undef, dim)
-    print("    fitting dim ")
+    if verbose print("    fitting dim ") end
     for d in 1:dim
-        print(d, ", ")
+        if verbose print(d, ", ") end
         loc = (kmat[d, 1] + kmat[d, 2]) / 2
         proposed[d] = split_subset(mod, stored, k, d, loc, mindat, args)
         ev_vals[d] = get_logev(proposed[d])
     end
     best_mod = findmax(ev_vals)[2]
-    println("\n    dimension ", best_mod, " trialed...")
+    if verbose println("\n    dimension ", best_mod, " trialed...") end
     return proposed[best_mod]
 end
 
 
 function auto_partition_model(X::Matrix{Float64}, y::Vector{Float64},
     bounds::Matrix{Float64}, args::ModArgs, T::Type, mindat::Union{Nothing, Int64},
-    Kmax::Int64)
+    Kmax::Int64, verbose)
     P = [bounds]
     K = 1
     mod = PartitionModel{T}(X, y, P, args)
@@ -365,11 +365,11 @@ function auto_partition_model(X::Matrix{Float64}, y::Vector{Float64},
     while K < Kmax
         split = false
         for k in randperm(K)
-            println("\n\nTesting subset ", k, ":")
-            modnew = best_dim_split(mod, stored, k, mindat, args)
+            if verbose println("\n\nTesting subset ", k, ":") end
+            modnew = best_dim_split(mod, stored, k, mindat, args, verbose)
             if isnothing(modnew) continue end
             if get_logev(modnew) > get_logev(mod) # Split led to improvement.
-                println("    SPLIT ACCEPTED!")
+                if verbose println("    SPLIT ACCEPTED!") end
                 mod = modnew
                 split = true
                 K += 1
@@ -385,7 +385,8 @@ end
 function auto_partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
         bounds::Union{Matrix{Float64}, Vector{Float64}}; degmax::Int64=3,
         maxparam::Int64=200, priorgen::Function=identity_hyper,
-        shape::Float64=0.001, scale::Float64=0.001, mindat=nothing, Kmax=200)
+        shape::Float64=0.001, scale::Float64=0.001, mindat=nothing, Kmax=200,
+        verbose=false)
     dim = size(X, 2)
     if typeof(bounds) == Vector{Float64}
         b1 = reshape(bounds, (1, 2))
@@ -393,13 +394,14 @@ function auto_partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
     end
     if isnothing(mindat) mindat = 2 * length(mvpindex(dim, degmax)) end
     args = PolyArgs(degmax, maxparam, priorgen, shape, scale)
-    return auto_partition_model(X, y, bounds1, args, PolyBLM, mindat, Kmax)
+    return auto_partition_model(X, y, bounds1, args, PolyBLM, mindat, Kmax,
+        verbose)
 end
 
 
 function auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
         bounds::Union{Matrix{Float64}, Vector{Float64}}, prior::BLMHyper;
-        mindat=nothing, Kmax=200)
+        mindat=nothing, Kmax=200, verbose=false)
     dim = size(X, 2)
     if typeof(bounds) == Vector{Float64}
         b1 = reshape(bounds, (1, 2))
@@ -407,16 +409,18 @@ function auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
     end
     if isnothing(mindat) mindat = 2 * dim end
     args = BLMArgs(prior)
-    return auto_partition_model(X, y, bounds1, args, BayesLinearModel, mindat, Kmax)
+    return auto_partition_model(X, y, bounds1, args, BayesLinearModel, mindat, Kmax,
+        verbose)
 end
 
 
 function auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
         bounds::Union{Matrix{Float64}, Vector{Float64}};
-        mindat=nothing, Kmax=200, shape=0.001, scale=0.001)
+        mindat=nothing, Kmax=200, shape=0.001, scale=0.001, verbose=false)
     dim = size(X, 2)
     prior = BLMHyper(dim, shape, scale)
-    return auto_partition_blm(X, y, bounds, prior; mindat=mindat, Kmax=Kmax)
+    return auto_partition_blm(X, y, bounds, prior; mindat=mindat, Kmax=Kmax,
+        verbose=verbose)
 end
 
 

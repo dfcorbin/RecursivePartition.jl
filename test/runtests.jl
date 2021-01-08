@@ -1,6 +1,6 @@
 using RecursivePartition
 using Test
 
-@testset "RecursivePartition.jl" begin
-    # Write your tests here.
+@testset "Legendre Polynomials" begin
+    include("test_legendre.jl")
 end

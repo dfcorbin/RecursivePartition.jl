@@ -1,5 +1,6 @@
 module RecursivePartition
 
-# Write your package code here.
+export legendre_next, legendre_poly
+include("legendre.jl")
 
 end

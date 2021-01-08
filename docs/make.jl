@@ -19,7 +19,8 @@ makedocs(;
         "Polynomial Basis Expansion" => [
             "Legendre Polynomials" => "legendre.md"
             "Polynomial Chaos Basis" => "pcb.md"
-        ]
+        ],
+        "Recursive Partitioning" => "partition.md"
     ],
 )
 

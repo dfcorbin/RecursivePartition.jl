@@ -16,8 +16,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-        "Polynomial Chaos Basis" => [
+        "Polynomial Basis Expansion" => [
             "Legendre Polynomials" => "legendre.md"
+            "Polynomial Chaos Basis" => "pcb.md"
         ]
     ],
 )

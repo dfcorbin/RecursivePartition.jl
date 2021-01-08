@@ -44,8 +44,6 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
-          target: 60%
-          threshold: 20%
   docs:
     name: Documentation
     runs-on: ubuntu-latest

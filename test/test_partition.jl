@@ -27,7 +27,7 @@ function test_which_subset()
     P = [[-1.0 0.0; -1.0 1.0], [0.0 1.0; -1.0 1.0]]
     x = [1.0, -1.0]
     upper = ones(Float64, 2)
-    @test which_subset(x, P, upper) == 2
+    @test which_subset(x, P) == 2
 end
 
 
@@ -38,6 +38,10 @@ function test_partition()
     Xsubs, ysubs, rows = partition(X, P, y; track=true)
     @test (Xsubs[1] == [-1.0 0.0]) && (ysubs[1] == [1.0])
     @test (Xsubs[2] == [1.0 0.0]) && (ysubs[2] == [2.0])
+    @test rows == [[1], [2]]
+    Xsubs, rows = partition(X, P, y; track=true)
+    @test (Xsubs[1] == [-1.0 0.0])
+    @test (Xsubs[2] == [1.0 0.0])
     @test rows == [[1], [2]]
     # Test what happens when one subset is empty
     X1 = [-1.0 0.0]

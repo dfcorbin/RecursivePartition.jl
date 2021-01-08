@@ -20,7 +20,7 @@ makedocs(;
             "Legendre Polynomials" => "legendre.md"
             "Polynomial Chaos Basis" => "pcb.md"
         ],
-        "Recursive Partitioning" => "partition.md"
+        "Recursive Partitioning" => "partition.md",
         "Regression" => "regression.md"
     ],
 )

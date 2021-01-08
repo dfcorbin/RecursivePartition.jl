@@ -74,9 +74,9 @@ get_coeffpost(model)
 # output
 
 3-element Array{Float64,1}:
-    0.997262172068708
-    1.9957265287418318
-    3.0063668906195202
+ 0.997262172068708
+ 1.9957265287418318
+ 3.0063668906195202
 ```
 """
 mutable struct BayesLinearModel <: LinearModel

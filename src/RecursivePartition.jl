@@ -19,7 +19,7 @@ export splitmat, insert_knot!, insert_knot, which_subset, partition,
 include("partition.jl")
 
 export BLMHyper, BayesLinearModel, fit!, predict, predfun, logevidence, PolyBLM
-    # More funs
+    
 export get_shape, get_scale, get_cov, get_dim, get_scaleprior, get_shapeprior, get_covprior,
     get_covinvprior, get_coeffprior, get_scalepost, get_shapepost, get_covpost,
     get_covinvpost, get_coeffpost, get_N, get_indices, set_scaleprior!, set_covprior!,

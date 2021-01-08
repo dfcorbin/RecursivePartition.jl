@@ -46,8 +46,9 @@ abstract type LinearModel end
 
 
 """
-    BayesLinearModel(dim::Int64; shape::Float64=0.001, scale::Float64=0.001,
-            prior::BLMHyper=BLMHyper(dim, shape, scale))
+    BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64}; shape::Float64=0.001,
+            scale::Float64=0.001)
+    BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64}, prior::BLMHyper)
 
 Construct [`BayesLinearModel`](@ref) object. One must only supply the dimensiojn
 of the linear model, and an optional set of prior hyper parameters. Once the
@@ -57,7 +58,26 @@ This object implements the well known Bayesian Linear Model with Gaussian
 responses and unknown variance. A Gaussian/inverse-gamma prior is placed on the
 model coefficients/variance respectively.
 
-See also: [`BLMHyper`](@ref)
+See also: [`BLMHyper`](@ref), [`fit!`](@ref)
+
+# Examples
+
+```jldoctest; setup = :(using Random; Random.seed!(100))
+coeff = [1.0, 2.0, 3.0]
+f(x) = coeff[1] + coeff[2:3]' * x # Truly linear model
+SD = 1.0
+X, y = gendat(50000, SD, f, 2)
+model = BayesLinearModel(X, y)
+
+get_coeffpost(model)
+
+# output
+
+3-element Array{Float64,1}:
+    0.997262172068708
+    1.9957265287418318
+    3.0063668906195202
+```
 """
 mutable struct BayesLinearModel <: LinearModel
     prior::BLMHyper
@@ -78,7 +98,6 @@ get_covpost(mod::BayesLinearModel) = mod.post.cov
 get_covinvpost(mod::BayesLinearModel) = mod.post.covinv
 get_coeffpost(mod::BayesLinearModel) = mod.post.coeff
 get_N(mod::BayesLinearModel) = Int64(2 * (get_shapepost(mod) - get_shapeprior(mod)))
-
 
 # Setters for BayesLinearModel
 set_scaleprior!(mod::BayesLinearModel, val) = begin mod.prior.scale = val end
@@ -105,11 +124,32 @@ end
 
 
 """
-function BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64}, dim::Int64;
-        shape::Float64=0.001, scale::Float64=0.001,
-        prior::BLMHyper=BLMHyper(dim, shape, scale))
+    fit!(mod::BayesLinearModel, X::Matrix{Float64}, y::Vector{Float64})
 
 Update a Bayesian Linear Model object with data matrix and response variables.
+
+See also: [`BayesLinearModel`](@ref)
+
+# Examples
+
+```jldoctest; setup = :(using Random; Random.seed!(100))
+coeff = [1.0, 2.0, 3.0]
+f(x) = coeff[1] + coeff[2:3]' * x # Truly linear model
+SD = 1.0
+X1, y1 = gendat(25000, SD, f, 2)
+X2, y2 = gendat(25000, SD, f, 2)
+model = BayesLinearModel(X1, y1) # Fit initial model
+fit!(model, X2, y2) # Update model with more data
+
+get_coeffpost(model)
+
+# output
+
+3-element Array{Float64,1}:
+ 0.996650221433608
+ 1.9907052757630952
+ 2.9924622031151826
+```
 """
 function fit!(mod::BayesLinearModel, X::Matrix{Float64}, y::Vector{Float64})
     if length(y) != size(X, 1)
@@ -128,12 +168,18 @@ function fit!(mod::BayesLinearModel, X::Matrix{Float64}, y::Vector{Float64})
 end
 
 
-function BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64};
-        shape::Float64=0.001, scale::Float64=0.001,
-        prior::BLMHyper=BLMHyper(size(X, 2), shape, scale))
+function BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64}, prior::BLMHyper)
     mod = BayesLinearModel(prior, deepcopy(prior))
     fit!(mod, X, y)
     return mod
+end
+
+
+function BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64};
+        shape::Float64=0.001, scale::Float64=0.001)
+    dim = size(X, 2)
+    prior = BLMHyper(dim, shape, scale)
+    return BayesLinearModel(X, y, prior)
 end
 
 
@@ -306,7 +352,7 @@ function PolyBLM(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
     indices = mvpindex(dim, degmax)
     modmat, indices = varselect(X, y, indices, bounds, maxparam)
     prior = priorgen(indices, shape, scale)
-    blm = BayesLinearModel(modmat, y; prior=prior)
+    blm = BayesLinearModel(modmat, y, prior)
     return PolyBLM(blm, indices, bounds)
 end
 

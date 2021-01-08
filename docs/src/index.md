@@ -6,7 +6,3 @@ CurrentModule = RecursivePartition
 
 ```@index
 ```
-
-```@autodocs
-Modules = [RecursivePartition]
-```

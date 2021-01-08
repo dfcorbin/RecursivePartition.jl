@@ -1,6 +1,10 @@
 using RecursivePartition
 using Documenter
 
+DocMeta.setdocmeta!(RecursivePartition, :DocTestSetup,
+    :(using RecursivePartition);
+    recursive=true)
+
 makedocs(;
     modules=[RecursivePartition],
     authors="Douglas Corbin <dfcorbin98@gmail.com>",
@@ -12,6 +16,9 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
+        "Polynomial Chaos Basis" => [
+            "Legendre Polynomials" => "legendre.md"
+        ]
     ],
 )
 

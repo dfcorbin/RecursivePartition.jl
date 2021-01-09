@@ -50,9 +50,10 @@ abstract type LinearModel end
             scale::Float64=0.001)
     BayesLinearModel(X::Matrix{Float64}, y::Vector{Float64}, prior::BLMHyper)
 
-Construct [`BayesLinearModel`](@ref) object. One must only supply the dimensiojn
+Construct [`BayesLinearModel`](@ref) object. One must only supply the dimension
 of the linear model, and an optional set of prior hyper parameters. Once the
-model is constructed, [`fit!`](@ref) is used to train it.
+model is constructed, [`fit!`](@ref) can be used to update it with additional
+data.
 
 This object implements the well known Bayesian Linear Model with Gaussian
 responses and unknown variance. A Gaussian/inverse-gamma prior is placed on the
@@ -201,7 +202,6 @@ end
     predict(mod::BayesLinearModel, X::Matrix{Float64})
 
 Predict responses based on data matrix `X`.
-
 ```
 """
 function predict(mod::BayesLinearModel, X::Matrix{Float64})
@@ -254,9 +254,7 @@ Basis](@ref).
 
 A bound on the maximum number of model parameters, `maxparam`, is specified by
 the user. If the number of parameters exceeds this bound, the LARS algorithm is
-used to choose the "best" set of parameters satisfying the bound. Consequently, a
-[`PolyBLM`](@ref) cannot be constructed without data (unlike
-[`BayesLinearModel`](@ref)).
+used to choose the "best" set of parameters satisfying the bound.
 
 Since we do not know which/how many parameters will be included in the model
 (we only that the number of parameters is bounded by `maxparam`), it is not

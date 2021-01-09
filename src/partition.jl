@@ -22,11 +22,11 @@ function splitmat(mat::Matrix{Float64}, dim::Int64, loc::Float64)
 end
 
 """
-    insert_knot!(P::Vector{Matrix{Float64}}, k::Int64, dim::Int64, loc::Float64)
+    insert_knot!(P::Matvec{Float64}, k::Int64, dim::Int64, loc::Float64)
 
 Do [`insert_knot`](@ref) by overwriting the original array (memory efficient).
 """
-function insert_knot!(P::Vector{Matrix{Float64}}, k::Int64, dim::Int64,
+function insert_knot!(P::Matvec{Float64}, k::Int64, dim::Int64,
     loc::Float64)
     s1, s2 = splitmat(P[k], dim, loc)
     P[k] = s1
@@ -34,12 +34,14 @@ function insert_knot!(P::Vector{Matrix{Float64}}, k::Int64, dim::Int64,
 end
 
 """
-    insert_knot(P::Vector{Matrix{Float64}}, k::Int64, dim::Int64, loc::Float64)
+    insert_knot(P::Matvec{Float64}, k::Int64, dim::Int64, loc::Float64)
 
 Bisect the `k`'th subset along dimension `dim`.
 
 This function returns a modified version of `P`, where the `k`'th subset is
-replaced by the two matrices outputted by [`splitmat`](@ref).
+replaced by the two matrices outputted by [`splitmat`](@ref). The left matrix
+of the split is inserted into the `k`'th position, the right side is appended
+to the end.
 
 See also: [`splitmat`](@ref), [`insert_knot!`](@ref)
 
@@ -56,7 +58,7 @@ P1 = insert_knot(P, 1, 1, 0.0)
  [0.0 1.0; -1.0 1.0]
 ```
 """
-function insert_knot(P::Vector{Matrix{Float64}}, k::Int64, dim::Int64,
+function insert_knot(P::Matvec{Float64}, k::Int64, dim::Int64,
     loc::Float64)
     P1 = deepcopy(P)
     insert_knot!(P1, k, dim, loc)
@@ -81,7 +83,7 @@ function is_contained(x::Vector{Float64}, knotmat::Matrix{Float64},
 end
 
 
-function get_upper(P::Vector{Matrix{Float64}})
+function get_upper(P::Matvec{Float64})
     dim = size(P[1], 1)
     upper = P[1][:, 2]
     for k in 2:length(P), d in 1:dim
@@ -101,7 +103,7 @@ function is_contained(X::Matrix{Float64}, knotmat::Matrix{Float64},
 end
 
 
-function which_subset(x::Vector{Float64}, P::Vector{Matrix{Float64}},
+function which_subset(x::Vector{Float64}, P::Matvec{Float64},
     upper::Vector{Float64})
     for i in 1:length(P)
         if is_contained(x, P[i], upper) return i end
@@ -111,7 +113,7 @@ end
 
 
 """
-    which_subset(x::Vector{Float64}, P::Vector{Matrix{Float64}})
+    which_subset(x::Vector{Float64}, P::Matvec{Float64})
 
 Determine which subset a vector `x` is contained by. This function assumes
 that your partition `P` is disjoint and comprises the entire space under union.
@@ -130,7 +132,7 @@ which_subset(x, P)
 1
 ```
 """
-function which_subset(x::Vector{Float64}, P::Vector{Matrix{Float64}})
+function which_subset(x::Vector{Float64}, P::Matvec{Float64})
     upper = get_upper(P)
     return which_subset(x, P, upper)
 end
@@ -158,7 +160,7 @@ partition(X, P, y; track=true)
 ([[-0.5 0.0], [0.5 0.0]], [[1.0], [2.0]], [[1], [2]])
 ```
 """
-function partition(X::Matrix{Float64}, P::Vector{Matrix{Float64}},
+function partition(X::Matrix{Float64}, P::Matvec{Float64},
     y::Vector{Float64}, upper::Vector{Float64}; track=false)
     if length(y) != size(X, 1)
         throw(ArgumentError("length of y must be equal to #row X."))
@@ -166,10 +168,10 @@ function partition(X::Matrix{Float64}, P::Vector{Matrix{Float64}},
     X1 = deepcopy(X)
     y1 = deepcopy(y)
     K = length(P)
-    Xsubsets = Vector{Matrix{Float64}}(undef, K)
-    ysubsets = Vector{Vector{Float64}}(undef, K)
+    Xsubsets = Matvec{Float64}(undef, K)
+    ysubsets = Vecvec{Float64}(undef, K)
     if track
-        rows = Vector{Vector{Int64}}(undef, K)
+        rows = Vecvec{Int64}(undef, K)
         rowstmp = [1:length(y)...]
     end
     for i in 1:K
@@ -187,22 +189,22 @@ function partition(X::Matrix{Float64}, P::Vector{Matrix{Float64}},
 end
 
 
-function partition(X::Matrix{Float64}, P::Vector{Matrix{Float64}},
+function partition(X::Matrix{Float64}, P::Matvec{Float64},
     y::Vector{Float64}; track=false)
     upper = get_upper(P)
     return partition(X, P, y, upper; track=track)
 end
 
 
-function partition(X::Matrix{Float64}, P::Vector{Matrix{Float64}}; track=false)
+function partition(X::Matrix{Float64}, P::Matvec{Float64}; track=false)
     upper = get_upper(P)
     X1 = deepcopy(X)
     K = length(P)
     if track
-        rows = Vector{Vector{Int64}}(undef, K)
+        rows = Vecvec{Int64}(undef, K)
         rowstmp = [1:size(X, 1)...]
     end
-    Xsubsets = Vector{Matrix{Float64}}(undef, K)
+    Xsubsets = Matvec{Float64}(undef, K)
     for i in 1:K
         r = is_contained(X1, P[i], upper)
         Xsubsets[i] = X1[r, :]

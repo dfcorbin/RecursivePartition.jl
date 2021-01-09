@@ -4,6 +4,17 @@
 abstract type ModArgs end
 
 
+"""
+    PartitionHyper(shape::Float64, scale::Float64,
+            logdet::Union{Nothing, Vector{Float64}})
+
+Container for hyperparamers which are shared across all subregion models.
+
+Shape and scale describe the (prior/posterior) distribution of the unknown noise
+across the entire space. Each local subregion model will have its own independent
+shape/scale parameters, which are aggregated with the other subregions to
+compute the shared hyperparameters.
+"""
 mutable struct PartitionHyper
     shape::Float64
     scale::Float64
@@ -11,6 +22,12 @@ mutable struct PartitionHyper
 end
 
 
+"""
+    PartitionModel{T <: LinearModel}
+
+Struct containing a recursive partition and [`LinearModel`](@ref)'s relating
+to each subset.
+"""
 mutable struct PartitionModel{T <: LinearModel}
     X::Matvec
     y::Vecvec
@@ -100,6 +117,15 @@ function PartitionModel{T}(X::Matrix{Float64}, y::Vector{Float64},
 end
 
 
+"""
+    partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
+            P::Matvec; degmax::Int64=3, maxparam::Int64=200,
+            priorgen::Function=identity_hyper, shape::Float64=0.001,
+            scale::Float64=0.001)
+
+Fit recursively partitioned [`PolyBLM`] models with a fixed (and prespecified)
+partition.
+"""
 function partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
         P::Matvec; degmax::Int64=3, maxparam::Int64=200,
         priorgen::Function=identity_hyper, shape::Float64=0.001,
@@ -116,6 +142,15 @@ function partition_blm(X::Matrix{Float64}, y::Vector{Float64},
 end
 
 
+"""
+partition_blm(X::Matrix{Float64}, y::Vector{Float64},
+        P::Matvec; shape::Float64=0.001, scale::Float64=0.001)
+partition_blm(X::Matrix{Float64}, y::Vector{Float64},
+        P::Matvec, prior::BLMHyper)
+
+Fit recursively partitioned [`BayesLinearModel`]'s with a fixed (and prespecified)
+partition.
+"""
 function partition_blm(X::Matrix{Float64}, y::Vector{Float64},
         P::Matvec; shape::Float64=0.001, scale::Float64=0.001)
     dim = size(X, 2)
@@ -219,6 +254,14 @@ function update_logev!(mod::PartitionModel, k::Int64, prev_scale::Float64,
 end
 
 
+"""
+    split_subset(mod::PartitionModel{T}, stored::Vector{SubsetMem{T}},
+            k::Int64, dim::Int64, loc::Float64, mindat::Int64,
+            args::ModArgs) where T <: LinearModel
+
+Return a [`PartitionModel`](@ref) where the `k`'th subset has been divided
+in a specficied dimension/location.
+"""
 function split_subset(mod::PartitionModel{T}, stored::Vector{SubsetMem{T}},
         k::Int64, dim::Int64, loc::Float64, mindat::Int64,
         args::ModArgs) where T <: LinearModel
@@ -382,6 +425,16 @@ function auto_partition_model(X::Matrix{Float64}, y::Vector{Float64},
 end
 
 
+"""
+    auto_partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
+            bounds::Union{Matrix{Float64}, Vector{Float64}}; degmax::Int64=3,
+            maxparam::Int64=200, priorgen::Function=identity_hyper,
+            shape::Float64=0.001, scale::Float64=0.001, mindat=nothing, Kmax=200,
+            verbose=false)
+
+Adaptively contruct a partition and fit a [`PartitionModel`](@ref), using
+[`PolyBLM`](@ref) models in each subregion.
+"""
 function auto_partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
         bounds::Union{Matrix{Float64}, Vector{Float64}}; degmax::Int64=3,
         maxparam::Int64=200, priorgen::Function=identity_hyper,
@@ -413,7 +466,17 @@ function auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
         verbose)
 end
 
+"""
+auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
+        bounds::Union{Matrix{Float64}, Vector{Float64}};
+        mindat=nothing, Kmax=200, shape=0.001, scale=0.001, verbose=false)
+auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
+        bounds::Union{Matrix{Float64}, Vector{Float64}}, prior::BLMHyper;
+        mindat=nothing, Kmax=200, verbose=false)
 
+Adaptively contruct a partition and fit a [`PartitionModel`](@ref), using
+[`BayesLinearModel`](@ref) models in each subregion.
+"""
 function auto_partition_blm(X::Matrix{Float64}, y::Vector{Float64},
         bounds::Union{Matrix{Float64}, Vector{Float64}};
         mindat=nothing, Kmax=200, shape=0.001, scale=0.001, verbose=false)

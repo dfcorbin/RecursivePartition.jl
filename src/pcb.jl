@@ -66,12 +66,14 @@ See also: [`mvpindex`](@ref), [`index_pcbmat`](@ref)
 # Examples
 
 Let's suppose we have the vector ``\\boldsymbol{x} = [x_1, x_2]`` and we wish
-to index the multivariate polynomial ``x_1^2 x_2^3``. This is achieved using the
-following object.
+to index the multivariate polynomial ``ϕ_2(x_1) \\cdot ϕ_2(x)^3``.
+This is achieved using the following object.
 
 ```julia
 MVPIndex([2, 3], [1, 2])
 ```
+
+Note that ``ϕ_j`` denotes a generic order ``j`` univariate polynomial.
 """
 struct MVPIndex
     deg::Vector{Int64}

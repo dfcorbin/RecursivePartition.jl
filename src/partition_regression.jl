@@ -26,7 +26,14 @@ end
     PartitionModel{T <: LinearModel}
 
 Struct containing a recursive partition and [`LinearModel`](@ref)'s relating
-to each subset.
+to each subset. Objects of this type are easiest to generate using
+[`partition_blm`](@ref), [`partition_polyblm`](@ref).
+
+Each model is assumed to be independent conditional on the unknown noise i.e.
+the noise is assumed to the constant (but unknown) across the entire space.
+Intuitively, this means that the models should be adjusted that no one subregion
+model approximates the noise significantly differently from the rest of the
+subregions (this would be an indication of under/over-fitting).
 """
 mutable struct PartitionModel{T <: LinearModel}
     X::Matvec
@@ -123,7 +130,8 @@ end
             priorgen::Function=identity_hyper, shape::Float64=0.001,
             scale::Float64=0.001)
 
-Fit recursively partitioned [`PolyBLM`] models with a fixed (and prespecified)
+Construct a [`PartitionModel`](@ref) object, in which the subregion models are
+comprised of [`PolyBLM`](@ref) models with a fixed (and prespecified)
 partition.
 """
 function partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
@@ -143,12 +151,13 @@ end
 
 
 """
-partition_blm(X::Matrix{Float64}, y::Vector{Float64},
-        P::Matvec; shape::Float64=0.001, scale::Float64=0.001)
-partition_blm(X::Matrix{Float64}, y::Vector{Float64},
-        P::Matvec, prior::BLMHyper)
+    partition_blm(X::Matrix{Float64}, y::Vector{Float64},
+            P::Matvec; shape::Float64=0.001, scale::Float64=0.001)
+    partition_blm(X::Matrix{Float64}, y::Vector{Float64},
+            P::Matvec, prior::BLMHyper)
 
-Fit recursively partitioned [`BayesLinearModel`]'s with a fixed (and prespecified)
+Construct a [`PartitionModel`](@ref) object, in which the subregion models are
+comprised of [`BayesLinearModel`](@ref) models with a fixed (and prespecified)
 partition.
 """
 function partition_blm(X::Matrix{Float64}, y::Vector{Float64},

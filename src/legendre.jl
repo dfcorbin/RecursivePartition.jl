@@ -3,8 +3,8 @@
 
 Recursive definition of the Legendre polynomials.
 
-The Legendre Polynomials are defined as second order recursive equation,
-meaning computing an order ``n > 2`` Legendre Polynomial is possible if we know
+The Legendre Polynomials can be expressed as second order recursive equation,
+thus computing an order ``n > 2`` Legendre Polynomial is possible if we know
 the corresponding order ``n - 1`` and ``n - 2`` evaluations. These are supplied
 in the arguments `d1` and `d0` (note that the order 1 and 0 evaluations are
 always equal to `x` and `1.0` respectively).

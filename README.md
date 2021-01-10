@@ -13,7 +13,9 @@ For a detailed description of the library's features, see the [full documentatio
 
 ## Installation
 
-TBC - Currently trying to get this library on the julia registry.
+```julia
+Pkg.add("RecursivePartition")
+```
 
 ## Recursive Partitioning
 

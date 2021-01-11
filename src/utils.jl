@@ -1,10 +1,10 @@
-const Matvec = Vector{Matrix{T}} where T
-const Vecvec = Vector{Vector{T}} where T
+const Matvec = Vector{Matrix{T}} where {T}
+const Vecvec = Vector{Vector{T}} where {T}
 
 
-function gendat(N, SD, f, d; bounds=[-1,1])
+function gendat(N, SD, f, d; bounds = [-1, 1])
     X = rand(Uniform(bounds[1], bounds[2]), N, d)
-    y = reshape(mapslices(f, X; dims=2), (:)) .+ rand(Normal(0.0, SD), N)
+    y = reshape(mapslices(f, X; dims = 2), (:)) .+ rand(Normal(0.0, SD), N)
     return (X, y)
 end
 

@@ -19,7 +19,8 @@ export splitmat, insert_knot!, insert_knot, which_subset, partition,
     is_contained
 include("partition.jl")
 
-export BLMHyper, BayesLinearModel, fit!, predict, predfun, logevidence, PolyBLM
+export BLMHyper, BayesLinearModel, fit!, predict, predfun, logevidence, PolyBLM, polymod_pcbmat,
+    identity_hyper
 include("regression.jl")
 
 export ModArgs, PartitionHyper, PartitionModel, partition_polyblm, partition_blm,
@@ -33,7 +34,7 @@ export get_shape, get_scale, get_cov, get_dim, get_scaleprior, get_shapeprior, g
     get_covinvprior, get_coeffprior, get_scalepost, get_shapepost, get_covpost,
     get_covinvpost, get_coeffpost, get_N, get_indices, get_loc_X, get_loc_y,
     get_loc_coeffpost, get_P, get_K, get_lm, get_logev, get_modvec, get_logdetprior,
-    get_logdetpost, get_prior, get_loc_scalepost
+    get_logdetpost, get_prior, get_loc_scalepost, get_loc_indices
 
 # Setters
 export set_scaleprior!, set_covprior!, set_covinvprior!, set_coeffprior!,

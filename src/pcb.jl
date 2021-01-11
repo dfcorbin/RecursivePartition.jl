@@ -1,6 +1,6 @@
 function rescale(x::Float64, knots::Vector{Float64})
     if x < knots[1] || x > knots[2]
-        throw(DomainError(x, "x uncontained by knots."))
+        throw(DomainError(x, "x uncontained by $knots"))
     end
     return 2 * (knots[1] - x) / (knots[1] - knots[2]) - 1
 end

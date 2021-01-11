@@ -305,6 +305,26 @@ set_covinvpost!(mod::PolyBLM, val) = set_covinvpost!(mod.blm, val)
 set_coeffpost!(mod::PolyBLM, val) = set_coeffpost!(mod.blm, val)
 
 
+function polymod_pcbmat(mod::PolyBLM, X::Matrix{Float64}; intercept::Bool=false)
+    indices = get_indices(mod)
+    kmat = get_kmat(mod)
+    modmat = index_pcbmat(X, indices, kmat)
+    if intercept
+        inter = ones(Float64, size(X, 1))
+        modmat = hcat(inter, modmat)
+    end
+    return modmat
+end
+
+
+function polymod_pcbmat(mod::PolyBLM, x::Vector{Float64}; intercept::Bool=false)
+    x1 = reshape(x, (1,:))
+    modmat = polymod_pcbmat(mod, x1; intercept=intercept)
+    modmat1 = reshape(modmat, (:))
+    return modmat1
+end
+
+
 function boundedvar(X::Matrix{Float64}, y::Vector{Float64},
     indices::Vector{MVPIndex}, kmat::Matrix{Float64}, maxparam::Int64)
     modmat = index_pcbmat(X, indices, kmat)
@@ -348,6 +368,8 @@ function PolyBLM(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
     scale::Float64=0.001, priorgen::Function=identity_hyper)
     dim = size(X, 2)
     indices = mvpindex(dim, degmax)
+    # println(bounds)
+    # println(maximum(X[1,:]))
     modmat, indices = varselect(X, y, indices, bounds, maxparam)
     prior = priorgen(indices, shape, scale)
     blm = BayesLinearModel(modmat, y, prior)
@@ -362,19 +384,14 @@ function PolyBLM(X::Matrix{Float64}, y::Vector{Float64}, degmax::Int64,
 end
 
 
-function mod_pcbmat(mod::PolyBLM, X::Matrix{Float64})
-    return index_pcbmat(X, get_indices(mod), get_kmat(mod))
-end
-
-
 function fit!(mod::PolyBLM, X::Matrix{Float64}, y::Vector{Float64})
-    modmat = mod_pcbmat(mod, X)
+    modmat = polymod_pcbmat(mod, X)
     fit!(get_blm(mod), modmat, y)
 end
 
 
 function predict(mod::PolyBLM, X::Matrix{Float64})
-    modmat = mod_pcbmat(mod, X)
+    modmat = polymod_pcbmat(mod, X)
     predict(get_blm(mod), modmat)
 end
 
@@ -383,7 +400,7 @@ function predfun(mod::PolyBLM)
     p = predfun(get_blm(mod))
     function f(x::Vector{Float64})::Float64
         x1 = reshape(x, (1, :))
-        ϕ = [1.0, mod_pcbmat(mod, x1)...]
+        ϕ = [1.0, polymod_pcbmat(mod, x1)...]
         return ϕ' * get_coeffpost(mod)
     end
     return f

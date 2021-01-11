@@ -4,7 +4,7 @@ function test_rescaling()
     @test RecursivePartition.rescale(X[1,1], bounds[1, :]) == -1.0
     @test RecursivePartition.rescale(X[1, :], bounds) == [-1.0, 1.0]
     @test RecursivePartition.rescale(X, bounds) == repeat([-1.0 1.0], 2, 1)
-    error = DomainError(1.1, "x uncontained by knots.")
+    error = DomainError(1.1, "x uncontained by [-1.0, 1.0]")
     @test_throws(error, RecursivePartition.rescale(1.1, [-1.0, 1.0]))
 end
 

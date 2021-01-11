@@ -39,6 +39,7 @@ mutable struct PartitionModel{T <: LinearModel}
     X::Matvec
     y::Vecvec
     P::Matvec
+    upper::Vector{Float64}
     modvec::Vector{T}
     gammaprior::PartitionHyper
     gammapost::PartitionHyper
@@ -54,6 +55,8 @@ get_K(mod::PartitionModel) = length(mod.P)
 get_lm(mod::PartitionModel, k::Int64) = mod.modvec[k]
 get_logev(mod::PartitionModel) = mod.logev
 get_modvec(mod::PartitionModel) = mod.modvec
+get_loc_indices(mod::PartitionModel, k::Int64) = mod.modvec[k].indices
+get_upper(mod::PartitionModel) = mod.upper
 
 get_scaleprior(mod::PartitionModel) = mod.gammaprior.scale
 get_shapeprior(mod::PartitionModel) = mod.gammaprior.shape
@@ -74,6 +77,13 @@ set_shapepost!(mod::PartitionModel, val::Float64) = begin mod.gammapost.shape = 
 set_logev!(mod::PartitionModel, val) = begin mod.logev = val end
 set_lm!(mod::PartitionModel, k::Int64, val::LinearModel) = begin mod.modvec[k] = val end
 append_modvec!(mod::PartitionModel, val::LinearModel) = begin push!(mod.modvec, val) end
+
+
+function which_subset(mod::PartitionModel, x::Vector{Float64})
+    P = get_P(mod)
+    upper = get_upper(mod)
+    return which_subset(x, P, upper)
+end
 
 
 function append_logdetprior!(mod::PartitionModel, val::Float64)
@@ -98,6 +108,7 @@ end
 function setup_PartitionModel(Xvec::Matvec, yvec::Vecvec, P::Matvec,
         modvec::Vector{<: LinearModel}, N::Int64, K::Int64, shape::Float64,
         scale::Float64)
+    upper = get_upper(P)
     logdetprior = [logdet(get_covprior(modvec[k])) for k in 1:K]
     logdetpost = [logdet(get_covpost(modvec[k])) for k in 1:K]
     shapepost = shape + N / 2
@@ -106,7 +117,7 @@ function setup_PartitionModel(Xvec::Matvec, yvec::Vecvec, P::Matvec,
     gammapost = PartitionHyper(shapepost, scalepost, logdetpost)
     logev = logevidence(logdetprior, logdetpost, shapepost, scalepost, shape,
     scale, N)
-    return PartitionModel(Xvec, yvec, P, modvec, gammaprior, gammapost, logev)
+    return PartitionModel(Xvec, yvec, P, upper, modvec, gammaprior, gammapost, logev)
 end
 
 
@@ -215,14 +226,15 @@ end
 function update_data!(mod::PartitionModel, k::Int64, mindat::Int64)
     Xvec, yvec = partition(mod.X[k], [mod.P[k], mod.P[end]], mod.y[k])
     size_l = length(yvec[1]); size_r = length(yvec[2])
-    if (size_l <= mindat) || (size_r <= mindat)
-        return mod = nothing
+    if (size_l < mindat) || (size_r < mindat)
+        return true
+    else
+        mod.X[k] = Xvec[1]
+        push!(mod.X, Xvec[2])
+        mod.y[k] = yvec[1]
+        push!(mod.y, yvec[2])
     end
-    mod.X[k] = Xvec[1]
-    push!(mod.X, Xvec[2])
-    mod.y[k] = yvec[1]
-    push!(mod.y, yvec[2])
-    return true
+    return false
 end
 
 
@@ -284,8 +296,10 @@ function split_subset(mod::PartitionModel{T}, stored::Vector{SubsetMem{T}},
     if pos != [0, 0]
         add_subsets_from_mem!(mod1, stored, pos, k)
     else
-        update_data!(mod1, k, mindat)
-        if isnothing(mod1) return nothing end
+        empty = update_data!(mod1, k, mindat)
+        if empty
+            return nothing
+        end
         update_models!(mod1, k, args)
         update_storage!(mod1, k, stored)
     end
@@ -398,8 +412,16 @@ function best_dim_split(mod::PartitionModel{T}, stored::Vector{SubsetMem{T}},
     for d in 1:dim
         if verbose print(d, ", ") end
         loc = (kmat[d, 1] + kmat[d, 2]) / 2
-        proposed[d] = split_subset(mod, stored, k, d, loc, mindat, args)
-        ev_vals[d] = get_logev(proposed[d])
+        m = split_subset(mod, stored, k, d, loc, mindat, args)
+        if isnothing(m)
+            ev_vals[d] = -Inf
+        else
+            proposed[d] = m
+            ev_vals[d] = get_logev(m)
+        end
+    end
+    if sum(ev_vals .== -Inf) == dim 
+        return nothing 
     end
     best_mod = findmax(ev_vals)[2]
     if verbose println("\n    dimension ", best_mod, " trialed...") end
@@ -419,7 +441,9 @@ function auto_partition_model(X::Matrix{Float64}, y::Vector{Float64},
         for k in randperm(K)
             if verbose println("\n\nTesting subset ", k, ":") end
             modnew = best_dim_split(mod, stored, k, mindat, args, verbose)
-            if isnothing(modnew) continue end
+            if isnothing(modnew)
+                continue 
+            end
             if get_logev(modnew) > get_logev(mod) # Split led to improvement.
                 if verbose println("    SPLIT ACCEPTED!") end
                 mod = modnew
@@ -453,8 +477,13 @@ function auto_partition_polyblm(X::Matrix{Float64}, y::Vector{Float64},
     if typeof(bounds) == Vector{Float64}
         b1 = reshape(bounds, (1, 2))
         bounds1 = repeat(b1, dim, 1)
+    else
+        bounds1 = deepcopy(bounds)
     end
-    if isnothing(mindat) mindat = 2 * length(mvpindex(dim, degmax)) end
+    if isnothing(mindat) mindat = length(mvpindex(dim, degmax)) + 1 end
+    if size(X, 1) < mindat
+        throw(ArgumentError("Minimum dataset size not met (≥ $mindat)"))
+    end
     args = PolyArgs(degmax, maxparam, priorgen, shape, scale)
     return auto_partition_model(X, y, bounds1, args, PolyBLM, mindat, Kmax,
         verbose)
@@ -547,7 +576,8 @@ function fit!(mod::PartitionModel, x::Vector{Float64}, y::Float64)
     k = which_subset(x, P)
     lm = get_lm(mod, k)
     scale0 = get_scalepost(mod) - (get_loc_scalepost(mod, k) - get_scaleprior(mod))
-    fit!(lm, x, y)
+    x1 = reshape(x, (1, :))
+    fit!(lm, x1, [y])
     scale1 = scale0 + (get_loc_scalepost(mod, k) - get_scaleprior(mod))
     shape1 = get_shapepost(mod) + 0.5
     set_scalepost!(mod, scale1)

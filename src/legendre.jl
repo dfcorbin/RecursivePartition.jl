@@ -36,7 +36,7 @@ function legendre_next(ord::Int64, x::Float64, d1::Float64, d0::Float64)
 end
 
 function iter_poly!(ord::Int64, x::Float64, d::Vector{Float64})
-    for i in 2:ord
+    for i = 2:ord
         next = legendre_next(i, x, d[1], d[2])
         d[2] = d[1]
         d[1] = next

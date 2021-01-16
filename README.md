@@ -14,6 +14,7 @@ For a detailed description of the library's features, see the [full documentatio
 ## Installation
 
 ```julia
+Pkg.Registry.add(RegistrySpec(url="https://github.com/dfcorbin/DCorbinJLReg"))
 Pkg.add("RecursivePartition")
 ```
 

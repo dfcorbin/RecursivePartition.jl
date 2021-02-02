@@ -5,6 +5,7 @@ using Distributions: Normal, Uniform
 using SpecialFunctions: loggamma
 using GLMNet: glmnet
 using Random: randperm
+using Suppressor: @suppress
 
 export gendat
 include("utils.jl")

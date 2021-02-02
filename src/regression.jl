@@ -369,14 +369,10 @@ function boundedvar(
     if length(indices) <= maxparam
         return modmat, indices
     end
-    lasso = glmnet(modmat, y).betas
-    var = Vector{Bool}(undef, length(indices))
-    for j = 1:size(lasso, 2)
-        if norm(lasso[:, j], 0) > maxparam
-            var = (lasso[:, j-1] .!= 0)
-            break
-        end
+    @suppress begin
+        lasso = glmnet(modmat, y, ).betas[:, end]
     end
+    var = lasso .!= 0.0
     return modmat[:, var], indices[var]
 end
 

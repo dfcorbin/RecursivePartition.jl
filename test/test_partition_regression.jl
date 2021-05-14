@@ -19,7 +19,6 @@ function test_PartitionModel()
 
     # Now test auto partitioned models line up with normal partitioned models.
     autoblm = auto_partition_blm(X, y, [-1.0, 1.0])
-    autoblm_P = get_P(autoblm)
     fixedblm = partition_blm(X, y, P)
     @test get_logev(autoblm) ≈ get_logev(fixedblm)
     auto_partition_polyblm(X, y, [-1.0, 1.0])

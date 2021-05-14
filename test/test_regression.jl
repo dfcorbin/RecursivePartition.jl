@@ -26,7 +26,7 @@ function test_BLM()
     @test get_N(mod) == length(y)
     @test approxeq(get_coeffpost(mod), coeff, 0.01)
     # Now test predicition functions.
-    Xtest, ytest = gendat(500, 0.5, foo, 2)
+    Xtest = gendat(500, 0.5, foo, 2)[1]
     pred1 = predict(mod, Xtest)
     pfun = predfun(mod)
     pred2 = mapslices(pfun, Xtest; dims = 2)

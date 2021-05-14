@@ -24,7 +24,6 @@ end
 function test_which_subset()
     P = [[-1.0 0.0; -1.0 1.0], [0.0 1.0; -1.0 1.0]]
     x = [1.0, -1.0]
-    upper = ones(Float64, 2)
     @test which_subset(x, P) == 2
 end
 

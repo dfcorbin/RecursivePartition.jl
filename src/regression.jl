@@ -448,7 +448,6 @@ end
 
 
 function predfun(mod::PolyBLM)
-    p = predfun(get_blm(mod))
     function f(x::Vector{Float64})::Float64
         x1 = reshape(x, (1, :))
         ϕ = [1.0, polymod_pcbmat(mod, x1)...]

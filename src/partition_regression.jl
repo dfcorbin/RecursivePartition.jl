@@ -550,7 +550,7 @@ function auto_partition_model(
     mod = PartitionModel{T}(X, y, P, args)
     stored = Vector{SubsetMem{T}}(undef, 0)
     while K < Kmax
-        split = false
+        has_split = false
         for k in randperm(K)
             if verbose
                 println("\n\nTesting subset ", k, ":")
@@ -564,14 +564,14 @@ function auto_partition_model(
                     println("    SPLIT ACCEPTED!")
                 end
                 mod = modnew
-                split = true
+                has_split = true
                 K += 1
                 if K >= Kmax
                     break
                 end
             end
         end
-        if !split
+        if !has_split
             break
         end
     end

@@ -370,8 +370,8 @@ function boundedvar(
         return modmat, indices
     end
     local lasso
-    @suppress lasso = glmnet(modmat, y, ).betas[:, end]
-    var = lasso .!= 0.0
+    @suppress lasso = glmnet(modmat, y; pmax=maxparam).betas[:, end]
+    var = .!(lasso .≈ 0.0)
     return modmat[:, var], indices[var]
 end
 
@@ -414,8 +414,6 @@ function PolyBLM(
 )
     dim = size(X, 2)
     indices = mvpindex(dim, degmax)
-    # println(bounds)
-    # println(maximum(X[1,:]))
     modmat, indices = varselect(X, y, indices, bounds, maxparam)
     prior = priorgen(indices, shape, scale)
     blm = BayesLinearModel(modmat, y, prior)

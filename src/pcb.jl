@@ -198,6 +198,22 @@ function index_pcbmat(X::Matrix{Float64}, indices::Vector{MVPIndex}, kmat::Matri
     return out
 end
 
+################################################################################
+## Experimental features...
+function index_pcbmat_new(
+    univar::Array{Float64, 3}, 
+    indices::Vector{MVPIndex}, 
+)
+    n = size(univar)[1]
+    num_indices = length(indices)
+    out = Matrix{Float64}(undef, n, num_indices)
+    for col = 1:num_indices, row = n
+        out[row, col] = mvp(indices[col], univar, row)
+    end
+    return out
+end
+
+################################################################################
 
 """
     trunc_pcbmat(X::Matrix{Float64}, degmax::Int64, kmat::Matrix{Float64})
